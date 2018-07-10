@@ -1,0 +1,22 @@
+{
+  "name": "johnnycombomtg",
+  "version": "1.0.0",
+  "description": "twitter bot tweeting mtg combo deck hands",
+  "main": "bot.js",
+  "scripts": {
+    "test": "test",
+    "start": "node bot.js"
+  },
+  "author": "Chris Medykiewicz",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "eslint": "^4.19.1",
+    "merge-images": "^1.1.0",
+    "merge-img": "^2.1.2",
+    "mtgsdk": "^0.3.0",
+    "mtgtop8": "^0.3.1",
+    "twit": "^2.2.10",
+    "twitter-node-client": "0.0.6"
+  }
+}
