@@ -121,65 +121,61 @@ req.post(mtgTop8Modern, function (err, res) {
                 deckName = listOfDecksFromEvents[i].title;
             }
         }
-        
+
 
         mtgTop8.deck(eventID, deckID, function (err, deck) {
-            // console.log(deck);
-            let deckList = deck;
-            let deckHand = [];
-            let card;
-            for (let i = 0; i < handSize; i++) {
-                card = { name: deck.cards[Math.floor(Math.random() * deck.cards.length)].name };
-                deckHand.push(card);
-            }
-            for (let i = 0; i < deckHand.length; i++) {
-                let dest = 'https://api.scryfall.com/cards/named?exact=' + deckHand[i].name + ';format=image;version=normal';
-                console.log(dest);
-                download(dest, './img/magicCard' + i + '.jpg', function () {
-                    // mergeImg(['./img/magicCard' + i + '.jpg'])
-                    // .then((img) => {
-                    //     // Save image as file
-                    //     img.write('compileHand.jpg', () => console.log('done'));
-                    // });
-                    console.log('done');
-                });
-            }
-            var compileHandPath;
-            // fs.unlink(path.join(__dirname, '') + '/compileHand.jpg');
-            mergeImg(['./img/magicCard0.jpg', './img/magicCard1.jpg', './img/magicCard2.jpg', './img/magicCard3.jpg', './img/magicCard4.jpg',
-                './img/magicCard5.jpg', './img/magicCard6.jpg'])
-                .then((img) => {
-                    // Save image as file
-                    img.write('compileHand.jpg', () => console.log('done'));
-                });
-            // compileHandPath = path.join(__dirname, '') + '/compileHand.jpg';
-            // b64content = fs.readFileSync(compileHandPath, { encoding: 'base64' });
+            if (deck) {
+                // console.log(deck);
+                let deckList = deck;
+                let deckHand = [];
+                let card;
+                for (let i = 0; i < handSize; i++) {
+                    card = { name: deck.cards[Math.floor(Math.random() * deck.cards.length)].name };
+                    let dest = 'https://api.scryfall.com/cards/named?exact=' + card.name + ';format=image;version=normal';
+                    console.log(dest);
+                    download(dest, './img/magicCard' + i + '.jpg', function () {
+                        console.log('finished download');
+                    });
+                }
+                setTimeout(function () {
+                    mergeImg(['./img/magicCard0.jpg', './img/magicCard1.jpg', './img/magicCard2.jpg', './img/magicCard3.jpg', './img/magicCard4.jpg',
+                        './img/magicCard5.jpg', './img/magicCard6.jpg'])
+                        .then((img) => {
+                            // Save image as file
+                            img.write('compileHand.jpg', () => console.log('merged'));
+                        });
+                    setTimeout(function () {
+                        var compileHandPath;
+                        compileHandPath = path.join(__dirname, '') + '/compileHand.jpg';
+                        b64content = fs.readFileSync(compileHandPath, { encoding: 'base64' });
+                        Twitter.post('media/upload', { media_data: b64content }, function (err, data, response) {
+                            if (err) {
+                                console.log('ERROR:');
+                                console.log(err);
+                            }
+                            else {
+                                console.log('Image uploaded!');
+                                console.log('Now tweeting it...');
 
-            // Twitter.post('media/upload', { media_data: b64content }, function (err, data, response) {
-            //     if (err) {
-            //         console.log('ERROR:');
-            //         console.log(err);
-            //     }
-            //     else {
-            //         console.log('Image uploaded!');
-            //         console.log('Now tweeting it...');
-
-            //         Twitter.post('statuses/update', {
-            //             status: 'Deck: ' + deckName + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + chooseFormat + '\n' + 'Deck list: ' + deckLink,
-            //             media_ids: new Array(data.media_id_string)
-            //         },
-            //             function (err, data, response) {
-            //                 if (err) {
-            //                     console.log('ERROR:');
-            //                     console.log(err);
-            //                 }
-            //                 else {
-            //                     console.log('Posted an image!');
-            //                 }
-            //             }
-            //         );
-            //     }
-            // });
+                                Twitter.post('statuses/update', {
+                                    status: 'Deck: ' + deckName + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + chooseFormat + '\n' + 'Deck list: ' + deckLink,
+                                    media_ids: new Array(data.media_id_string)
+                                },
+                                    function (err, data, response) {
+                                        if (err) {
+                                            console.log('ERROR:');
+                                            console.log(err);
+                                        }
+                                        else {
+                                            console.log('Posted an image!');
+                                        }
+                                    }
+                                );
+                            }
+                        });
+                    }, 3000)
+                }, 6000)
+            }
         });
     });
 
