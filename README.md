@@ -1,5 +1,4 @@
 # JohnnyComboMTG
-MTG Combo Twitter Bot
 
 ### Goal
 
