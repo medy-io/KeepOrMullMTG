@@ -1,8 +1,8 @@
-# JohnnyComboMTG
+# Keep or Mull MTG
 
 ### Goal
 
-This twitter bots purpose is to fetch Magic: the gathering combo deck data from Modern, Legacy and Vintage and post 7 card hand images with a deck name, play/draw info, and a link to the deck list.
+This twitter bots purpose is to fetch Magic: the gathering deck data from Standard, Modern, Legacy and Vintage and post 7 card hand images with a deck name, play/draw info, and a link to the deck list.
 
 ### Data Fetching
 
