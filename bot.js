@@ -1,12 +1,18 @@
 // imports
-var twit = require('twit'),
-    config = require('./config.js'),
+var Twit = require('twit'),
+    Twitter = new Twit(
+        {
+            consumer_key: process.env.BOT_CONSUMER_KEY,
+            consumer_secret: process.env.BOT_CONSUMER_SECRET,
+            access_token: process.env.BOT_ACCESS_TOKEN,
+            access_token_secret: process.env.BOT_ACCESS_TOKEN_SECRET
+        }
+    ),
     request = require('request'),
     mergeImg = require('merge-img'),
     path = require("path"),
-    Twitter = new twit(config),
     fs = require('fs'),
-    fetchMtgData = require('./fetch-mtg-data');
+    fetchMtgData = require('./fetchData');
 
 // variables
 var handSize = 7,
@@ -24,20 +30,47 @@ var handSize = 7,
     dest = [],
     eventId;
 
-// Async and await
+// get mtg, get images, merge image and tweet: 'bootstrap async function for bot'
 async function getSampleHandData() {
     try {
         eventData = await fetchMtgData.retrieveMTGEventsData(1);
         eventId = eventData[Math.floor(Math.random() * eventData.length)].id;
         singleEventDataPoint = await fetchMtgData.fetchSingleEventData(eventId);
         deckObj = singleEventDataPoint.decks[Math.floor(Math.random() * singleEventDataPoint.decks.length)];
-        fetchCardImageURL(convertDeckDataToReflectDuplicates(await fetchMtgData.fetchDeck(eventId, deckObj.id)));
+        createCardImageURL(convertDeckDataToReflectMultipleCopies(await fetchMtgData.fetchDeck(eventId, deckObj.id)));
         await downloadImages();
     } catch (error) {
         console.log(error);
     }
 }
+getSampleHandData();
 
+// format deck data to include multiple copies of certain cards
+function convertDeckDataToReflectMultipleCopies(deckData) {
+    let deck = [];
+    for (let i = 0; i < deckData.cards.length; i++) {
+        if (deckData.cards[i] && deckData.cards[i].count && deckData.cards[i].name) {
+            var cardCount = deckData.cards[i].count;
+            var cardName = deckData.cards[i].name;
+            for (let i = 0; i < cardCount; i++) {
+                deck.push(cardName);
+            }
+        }
+    }
+    return deck;
+}
+
+// create list of card image urls
+function createCardImageURL(deckData) {
+    for (var i = 0; i < handSize; i++) {
+        var cardIndex = Math.floor(Math.random() * deckData.length);
+        let chosenCard = deckData.splice(cardIndex, 1)[0];
+        card.push(chosenCard);
+        dest.push('https://api.scryfall.com/cards/named?exact=' + card[i] + ';format=image;version=normal');
+    }
+}
+
+// download each card image and wait for all card image promises to resolve, then call margeImages()
 function downloadImages() {
     var promise1 = new Promise(function (resolve, reject) {
         request.head(dest[0], (err, res, body) => {
@@ -101,49 +134,27 @@ function downloadImages() {
     });
 }
 
-function convertDeckDataToReflectDuplicates(deckData) {
-    let deck = [];
-    for (let i = 0; i < deckData.cards.length; i++) {
-        if (deckData.cards[i] && deckData.cards[i].count && deckData.cards[i].name) {
-            var cardCount = deckData.cards[i].count;
-            var cardName = deckData.cards[i].name;
-            for (let i = 0; i < cardCount; i++) {
-                deck.push(cardName);
-            }
-        }
-    }
-    return deck;
-}
-
-function fetchCardImageURL(deckData) {
-        for (var i = 0; i < handSize; i++) {
-            var cardIndex = Math.floor(Math.random() * deckData.length);
-            let chosenCard = deckData.splice(cardIndex, 1)[0];
-            card.push(chosenCard);
-            dest.push('https://api.scryfall.com/cards/named?exact=' + card[i] + ';format=image;version=normal');
-        }
-       
-}
-
+// merge all card images, save file, convert to base64 image, then initiate tweet 
 function mergeAllImages() {
-    console.log('start merging images'); 
     mergeImg(['./img/magicCard0.jpg', './img/magicCard1.jpg', './img/magicCard2.jpg', './img/magicCard3.jpg', './img/magicCard4.jpg',
-            './img/magicCard5.jpg', './img/magicCard6.jpg'])
-            .then(img => {
-                // Save image as file 
-                img.write('./img/compileHand.jpg', () => console.log('merged'));
-                compileHandPath = path.join(__dirname, '/img/' + 'compileHand.jpg');
-                fs.readFile(compileHandPath, { encoding: 'base64', flag: 'r' }, (err, data) => {
-                                if (err) return err;
-                                console.log('Build complete!');
-                                b64content = data;
-                                postToTwitter();
-                            });
-                });
+        './img/magicCard5.jpg', './img/magicCard6.jpg'])
+        .then(img => {
+            // Save image as file 
+            img.write('./img/compileHand.jpg', () => {
+                console.log('merged');
+            });
+            compileHandPath = path.join(__dirname, '/img/' + 'compileHand.jpg');
+            fs.readFile(compileHandPath, { encoding: 'base64', flag: 'r' }, (err, data) => {
+                if (err) return err;
+                console.log('Build complete!');
+                b64content = data;
+                postToTwitter();
+            });
+        });
 }
 
+// post tweet with image and deck data
 function postToTwitter() {
-    console.log('About to Tweet!')
     Twitter.post('media/upload', { media_data: b64content }, function (err, data, response) {
         if (err) {
             console.log('ERROR:');
@@ -154,7 +165,7 @@ function postToTwitter() {
             console.log('Now tweeting it...');
 
             Twitter.post('statuses/update', {
-                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + deckLink + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat,
+                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + deckLink + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat + '\n' + '#KeepOrMull',
                 media_ids: new Array(data.media_id_string)
             },
                 function (err, data, response) {
@@ -170,4 +181,3 @@ function postToTwitter() {
         }
     });
 }
-getSampleHandData();

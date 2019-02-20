@@ -1,15 +1,16 @@
 {
-  "name": "johnnycombomtg",
+  "name": "full-grip-mtg",
   "version": "1.0.0",
-  "description": "twitter bot tweeting mtg combo deck hands",
-  "main": "bot.js",
+  "description": "twitter bot for tweeting out random magic the gathering opening hands from top performing decks",
+  "main": "bot,js",
   "scripts": {
-    "test": "test",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node bot.js"
   },
-  "author": "Chris Medykiewicz",
+  "author": "chris medykiewicz",
   "license": "ISC",
   "dependencies": {
+    "twit": "^2.2.11",
     "cheerio": "^1.0.0-rc.2",
     "eslint": "^4.19.1",
     "merge-images": "^1.1.0",
@@ -17,7 +18,6 @@
     "mtgsdk": "^0.3.0",
     "mtgtop8": "^0.3.1",
     "promise": "^8.0.2",
-    "twit": "^2.2.10",
     "twitter-node-client": "0.0.6"
   }
 }
