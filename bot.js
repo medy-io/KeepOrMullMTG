@@ -165,7 +165,7 @@ function postToTwitter() {
             console.log('Now tweeting it...');
 
             Twitter.post('statuses/update', {
-                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + deckLink + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat + '\n' + '#KeepOrMull',
+                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + deckLink + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat + '\n' + '#KeepOrMull' + '\n' + '#' + singleEventDataPoint.format + 'MTG' + '\n' + '#MTG',
                 media_ids: new Array(data.media_id_string)
             },
                 function (err, data, response) {
