@@ -2,10 +2,10 @@
 var Twit = require('twit'),
     Twitter = new Twit(
         {
-            consumer_key: process.env.BOT_CONSUMER_KEY,
-            consumer_secret: process.env.BOT_CONSUMER_SECRET,
-            access_token: process.env.BOT_ACCESS_TOKEN,
-            access_token_secret: process.env.BOT_ACCESS_TOKEN_SECRET
+            consumer_key: '9amG0HeJpVxYm5PCSzQM2Kd98', //process.env.BOT_CONSUMER_KEY,
+            consumer_secret: 'PHSiSWPQJ6kfrj8npKiquWlBinOO6yH8IIaSYWG4wrXLI3pvbV',// process.env.BOT_CONSUMER_SECRET,
+            access_token: '1004735994552299520-zOn0vy1cPxylLeWRNyal0tliVcxUR5',// process.env.BOT_ACCESS_TOKEN,
+            access_token_secret: 'cPwS5ZGw3JX8G6uYlISwgvxLbuQncqHbqMe9nWmvo1Rhe', // process.env.BOT_ACCESS_TOKEN_SECRET
         }
     ),
     request = require('request'),
@@ -134,12 +134,12 @@ function downloadImages() {
     });
 }
 
-// merge all card images, save file, convert to base64 image, then initiate tweet 
+// merge all card images, save file, convert to base64 image, then initiate tweet
 function mergeAllImages() {
     mergeImg(['./img/magicCard0.jpg', './img/magicCard1.jpg', './img/magicCard2.jpg', './img/magicCard3.jpg', './img/magicCard4.jpg',
         './img/magicCard5.jpg', './img/magicCard6.jpg'])
         .then(img => {
-            // Save image as file 
+            // Save image as file
             img.write('./img/compileHand.jpg', () => {
                 console.log('merged');
             });
@@ -165,7 +165,7 @@ function postToTwitter() {
             console.log('Now tweeting it...');
 
             Twitter.post('statuses/update', {
-                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + deckLink + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat + '\n' + '#KeepOrMull' + '\n' + '#' + singleEventDataPoint.format + 'MTG' + '\n' + '#MTG',
+                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + deckLink + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat + '\n' + '#KeepOrMull',
                 media_ids: new Array(data.media_id_string)
             },
                 function (err, data, response) {
