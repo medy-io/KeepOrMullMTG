@@ -1,5 +1,5 @@
 // imports
-var Twit = require('twit'),
+const Twit = require('twit'),
     Twitter = new Twit(
         {
             consumer_key: process.env.BOT_CONSUMER_KEY,
@@ -12,41 +12,37 @@ var Twit = require('twit'),
     mergeImg = require('merge-img'),
     path = require("path"),
     fs = require('fs'),
-    fetchMtgData = require('./fetchData');
+    fetchMtgData = require('./fetchData'),
+    globalConst = require('./global-constants');
 
 // variables
-var handSize = 7,
-    // play or draw for tweet
-    playOrDraw = Math.floor(Math.random() * 10 + 1) % 2 ? 'Play' : 'Draw',
-    b64content,
-    deckName,
+let b64content,
     chooseFormat,
     eventData,
     singleEventDataPoint,
-    deckLink = 'https://www.mtgtop8.com/event?e=',
     compileHandPath,
     deckObj = [],
     card = [],
     dest = [],
-    eventId;
+    eventId,
+    mergeImageFlag = 0;;
 
 // get mtg, get images, merge image and tweet: 'bootstrap async function for bot'
-async function getSampleHandData() {
+(async () => {
     try {
         eventData = await fetchMtgData.retrieveMTGEventsData(1);
         eventId = eventData[Math.floor(Math.random() * eventData.length)].id;
         singleEventDataPoint = await fetchMtgData.fetchSingleEventData(eventId);
         deckObj = singleEventDataPoint.decks[Math.floor(Math.random() * singleEventDataPoint.decks.length)];
-        createCardImageURL(convertDeckDataToReflectMultipleCopies(await fetchMtgData.fetchDeck(eventId, deckObj.id)));
+        await createCardImageURL(await convertDeckDataToReflectMultipleCopies(await fetchMtgData.fetchDeck(eventId, deckObj.id)));
         await downloadImages();
     } catch (error) {
-        console.log(error);
+        console.log("Something went wrong:  |  " + error)
     }
-}
-getSampleHandData();
+})()
 
 // format deck data to include multiple copies of certain cards
-function convertDeckDataToReflectMultipleCopies(deckData) {
+const convertDeckDataToReflectMultipleCopies = deckData => {
     let deck = [];
     for (let i = 0; i < deckData.cards.length; i++) {
         if (deckData.cards[i] && deckData.cards[i].count && deckData.cards[i].name) {
@@ -61,8 +57,8 @@ function convertDeckDataToReflectMultipleCopies(deckData) {
 }
 
 // create list of card image urls
-function createCardImageURL(deckData) {
-    for (var i = 0; i < handSize; i++) {
+const createCardImageURL = deckData => {
+    for (var i = 0; i < globalConst.HAND_SIZE; i++) {
         var cardIndex = Math.floor(Math.random() * deckData.length);
         let chosenCard = deckData.splice(cardIndex, 1)[0];
         card.push(chosenCard);
@@ -70,110 +66,81 @@ function createCardImageURL(deckData) {
     }
 }
 
-// download each card image and wait for all card image promises to resolve, then call margeImages()
-function downloadImages() {
-    var promise1 = new Promise(function (resolve, reject) {
-        request.head(dest[0], (err, res, body) => {
-            request(dest[0]).pipe(fs.createWriteStream('./img/magicCard' + 0 + '.jpg')).on('close', function () {
-                console.log('finished download');
-                resolve();
-            });
+const downloadCardImage = index => {
+    request(dest[index])
+        .pipe(fs.createWriteStream('./img/magicCard' + index + '.jpg'))
+        .on('close', function () {
+            console.log('finished download');
+            mergeImageFlag++;
+            if (mergeImageFlag === 7) {
+                console.log(mergeImageFlag);
+                mergeAllImages();
+            }
         });
-    });
-    var promise2 = new Promise(function (resolve, reject) {
-        request.head(dest[1], (err, res, body) => {
-            request(dest[1]).pipe(fs.createWriteStream('./img/magicCard' + 1 + '.jpg')).on('close', function () {
-                console.log('finished download');
-                resolve();
-            });
+}
+
+// download each card image and wait for all card image promises to resolve, then call mergeImages()
+const downloadImages = () => {
+    try {
+        let pList = [];
+        for (let i = 0; i < 7; i++) {
+            pList.push(request.head(dest[i]));
+        }
+        Promise.all(pList).then(() => {
+            for (let i = 0; i < 7; i++) {
+                downloadCardImage(i);
+            }
         });
-    });
-    var promise3 = new Promise(function (resolve, reject) {
-        request.head(dest[2], (err, res, body) => {
-            request(dest[2]).pipe(fs.createWriteStream('./img/magicCard' + 2 + '.jpg')).on('close', function () {
-                console.log('finished download');
-                resolve();
-            });
-        });
-    });
-    var promise4 = new Promise(function (resolve, reject) {
-        request.head(dest[3], (err, res, body) => {
-            request(dest[3]).pipe(fs.createWriteStream('./img/magicCard' + 3 + '.jpg')).on('close', function () {
-                console.log('finished download');
-                resolve();
-            });
-        });
-    });
-    var promise5 = new Promise(function (resolve, reject) {
-        request.head(dest[4], (err, res, body) => {
-            request(dest[4]).pipe(fs.createWriteStream('./img/magicCard' + 4 + '.jpg')).on('close', function () {
-                console.log('finished download');
-                resolve();
-            });
-        });
-    });
-    var promise6 = new Promise(function (resolve, reject) {
-        request.head(dest[5], (err, res, body) => {
-            request(dest[5]).pipe(fs.createWriteStream('./img/magicCard' + 5 + '.jpg')).on('close', function () {
-                console.log('finished download');
-                resolve();
-            });
-        });
-    });
-    var promise7 = new Promise(function (resolve, reject) {
-        request.head(dest[6], (err, res, body) => {
-            request(dest[6]).pipe(fs.createWriteStream('./img/magicCard' + 6 + '.jpg')).on('close', function () {
-                console.log('finished download');
-                resolve();
-            });
-        });
-    });
-    Promise.all([promise1, promise2, promise3, promise4, promise5, promise6, promise7]).then((values) => {
-        console.log('Finished');
-        mergeAllImages();
-    });
+    } catch (err) {
+        console.log(err);
+    }
 }
 
 // merge all card images, save file, convert to base64 image, then initiate tweet
-function mergeAllImages() {
+const mergeAllImages = () => {
+    mergeImageFlag = 0;
     mergeImg(['./img/magicCard0.jpg', './img/magicCard1.jpg', './img/magicCard2.jpg', './img/magicCard3.jpg', './img/magicCard4.jpg',
         './img/magicCard5.jpg', './img/magicCard6.jpg'])
         .then(img => {
-            // Save image as file
-            img.write('./img/compileHand.jpg', () => {
-                console.log('merged');
-            });
-            compileHandPath = path.join(__dirname, '/img/' + 'compileHand.jpg');
-            fs.readFile(compileHandPath, { encoding: 'base64', flag: 'r' }, (err, data) => {
-                if (err) return err;
-                console.log('Build complete!');
-                b64content = data;
-                postToTwitter();
-            });
+            if (img) {
+                // Save image as file
+                img.write('./img/compileHand.jpg', () => {
+                    console.log('merged');
+                    readImageAndKickTweet();
+                });
+            }
         });
 }
 
+const readImageAndKickTweet = () => {
+    compileHandPath = path.join(__dirname, '/img/' + 'compileHand.jpg');
+    fs.readFile(compileHandPath, { encoding: 'base64', flag: 'r' }, (err, data) => {
+        if (err) return err;
+        console.log('Build complete!');
+        b64content = data;
+        postToTwitter();
+    });
+}
+
 // post tweet with image and deck data
-function postToTwitter() {
+const postToTwitter = () => {
     Twitter.post('media/upload', { media_data: b64content }, function (err, data, response) {
         if (err) {
             console.log('ERROR:');
             console.log(err);
-        }
-        else {
+        } else {
             console.log('Image uploaded!');
             console.log('Now tweeting it...');
 
             Twitter.post('statuses/update', {
-                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + playOrDraw + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + deckLink + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat + '\n' + '#KeepOrMull',
+                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + globalConst.PLAY_OR_DRAW + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + globalConst.DECK_LINK + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat + '\n' + '#KeepOrMull' + '\n' + '#MTG' + singleEventDataPoint.format + '\n' + '#MTG',
                 media_ids: new Array(data.media_id_string)
             },
-                function (err, data, response) {
+                (err, data, response) => {
                     if (err) {
                         console.log('ERROR:');
                         console.log(err);
-                    }
-                    else {
+                    } else {
                         console.log('Posted an image!');
                     }
                 }

@@ -1,4 +1,4 @@
-var request = require('request'),
+const request = require('request'),
     cheerio = require('cheerio'),
     iconv = require('iconv-lite'),
     moment = require('moment');
@@ -6,7 +6,7 @@ var request = require('request'),
 // async fetch for mtg events data for a particular format
 function retrieveMTGEventsData(page) {
     return new Promise(function (resolve, reject) {
-        var formatList = ['ST' ,'PI', 'MO', 'LE', 'VI'];
+        var formatList = ['ST', 'PI', 'MO', 'LE', 'VI'];
         chooseFormat = formatList[Math.floor(Math.random() * formatList.length)];
         var mtgTop8URL = 'http://mtgtop8.com/format?f=' + chooseFormat + '&meta=52';
         request.post(mtgTop8URL, { form: { cp: page } }, function (error, response) {
