@@ -1,15 +1,27 @@
+import {} from "";
+import {} from "";
+import {} from "";
+import {} from "";
+
+
 const request = require('request'),
     cheerio = require('cheerio'),
     iconv = require('iconv-lite'),
     moment = require('moment');
 
+
+
+
+
 // async fetch for mtg events data for a particular format
-function retrieveMTGEventsData(page) {
-    return new Promise(function (resolve, reject) {
-        var formatList = ['ST', 'PI', 'MO', 'LE', 'VI'];
-        chooseFormat = formatList[Math.floor(Math.random() * formatList.length)];
-        var mtgTop8URL = 'http://mtgtop8.com/format?f=' + chooseFormat + '&meta=52';
-        request.post(mtgTop8URL, { form: { cp: page } }, function (error, response) {
+export async function get(page) {
+    createMTGTop8Url();
+    return "";
+
+
+    new Promise(function (resolve, reject) {
+        
+        request.post(MTG_TOP_8_URL, { form: { cp: page } }, function (error, response) {
             if (error) return reject(error);
             var result = [];
             var $ = cheerio.load(iconv.decode(response.body, 'latin-1'));
@@ -28,6 +40,16 @@ function retrieveMTGEventsData(page) {
             resolve(result);
         });
     });
+}
+
+function randomlyChooseMtgFormat(): string {
+    var formatList = ['ST', 'PI', 'MO', 'LE', 'VI'];
+    return formatList[Math.floor(Math.random() * formatList.length)];
+}
+
+function createMTGTop8Url(): string {
+    const MTG_TOP_8_URL = 'http://mtgtop8.com/format?f=' + randomlyChooseMtgFormat() + '&meta=52';
+    return MTG_TOP_8_URL;
 }
 
 function fetchSingleEventData(eventId) {

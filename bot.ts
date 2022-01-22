@@ -1,11 +1,14 @@
 // imports
+import { keys } from "./environment.ts";
+import { postToTwitter } from "./postToTwiter";
+
 const Twit = require('twit'),
     Twitter = new Twit(
         {
-            consumer_key: process.env.BOT_CONSUMER_KEY,
-            consumer_secret: process.env.BOT_CONSUMER_SECRET,
-            access_token: process.env.BOT_ACCESS_TOKEN,
-            access_token_secret: process.env.BOT_ACCESS_TOKEN_SECRET
+            keys.consumer_key,
+            keys.consumer_secret,
+            keys.access_token,
+            keys.access_token_secret
         }
     ),
     request = require('request'),
@@ -31,6 +34,7 @@ let b64content,
 (async () => {
     try {
         eventData = await fetchMtgData.retrieveMTGEventsData(1);
+        console.log("event data: " + eventData);
         eventId = eventData[Math.floor(Math.random() * eventData.length)].id;
         singleEventDataPoint = await fetchMtgData.fetchSingleEventData(eventId);
         deckObj = singleEventDataPoint.decks[Math.floor(Math.random() * singleEventDataPoint.decks.length)];
@@ -119,32 +123,5 @@ const readImageAndKickTweet = () => {
         console.log('Build complete!');
         b64content = data;
         postToTwitter();
-    });
-}
-
-// post tweet with image and deck data
-const postToTwitter = () => {
-    Twitter.post('media/upload', { media_data: b64content }, function (err, data, response) {
-        if (err) {
-            console.log('ERROR:');
-            console.log(err);
-        } else {
-            console.log('Image uploaded!');
-            console.log('Now tweeting it...');
-
-            Twitter.post('statuses/update', {
-                status: 'Deck: ' + deckObj.title + '\n' + 'On the ' + globalConst.PLAY_OR_DRAW + '\n' + 'Format: ' + singleEventDataPoint.format + '\n' + 'Deck list: ' + globalConst.DECK_LINK + eventId + '&d=' + deckObj.id + '&f=' + chooseFormat + '\n' + '#KeepOrMull' + '\n' + '#MTG' + singleEventDataPoint.format + '\n' + '#MTG',
-                media_ids: new Array(data.media_id_string)
-            },
-                (err, data, response) => {
-                    if (err) {
-                        console.log('ERROR:');
-                        console.log(err);
-                    } else {
-                        console.log('Posted an image!');
-                    }
-                }
-            );
-        }
     });
 }
