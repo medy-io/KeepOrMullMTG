@@ -1,5 +1,5 @@
 // post tweet with image and deck data
-export default function = postToTwitter():void {
+export function postToTwitter() {
     Twitter.post('media/upload', { media_data: b64content }, function (err, data, response) {
         if (err) {
             console.log('ERROR:');

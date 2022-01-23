@@ -1,34 +1,45 @@
-// imports
-import { keys } from "./environment.ts";
+import Twit from 'twit';
+import { keys } from "./environment";
+import { mergeAllImages } from "./mergeAllImages";
+import { readImageAndKickTweet } from "./readImageAndKickTweet";
 import { postToTwitter } from "./postToTwiter";
 
-const Twit = require('twit'),
-    Twitter = new Twit(
+
+const TWITTER_KEYS: any = new Twit(
         {
             keys.consumer_key,
             keys.consumer_secret,
             keys.access_token,
             keys.access_token_secret
         }
-    ),
-    request = require('request'),
-    mergeImg = require('merge-img'),
-    path = require("path"),
-    fs = require('fs'),
-    fetchMtgData = require('./fetchData'),
-    globalConst = require('./global-constants');
+    );
+//     request = require('request'),
+//     mergeImg = require('merge-img'),
+//     path = require("path"),
+//     fs = require('fs'),
+//     fetchMtgData = require('./fetchData'),
+//     globalConst = require('./global-constants');
+
+// const Twitter = new Twit(
+//         {
+//             keys.consumer_key,
+//             keys.consumer_secret,
+//             keys.access_token,
+//             keys.access_token_secret
+//         }
+//     ),
 
 // variables
-let b64content,
-    chooseFormat,
-    eventData,
-    singleEventDataPoint,
-    compileHandPath,
-    deckObj = [],
-    card = [],
-    dest = [],
-    eventId,
-    mergeImageFlag = 0;;
+let b64content: any,
+    chooseFormat: any,
+    eventData: any,
+    singleEventDataPoint: any,
+    compileHandPath: any,
+    deckObj: any[] = [],
+    card: any[] = [],
+    dest: any[] = [],
+    eventId: any,
+    mergeImageFlag: number = 0;
 
 // get mtg, get images, merge image and tweet: 'bootstrap async function for bot'
 (async () => {
@@ -41,7 +52,9 @@ let b64content,
         await createCardImageURL(await convertDeckDataToReflectMultipleCopies(await fetchMtgData.fetchDeck(eventId, deckObj.id)));
         await downloadImages();
     } catch (error) {
-        console.log("Something went wrong:  |  " + error)
+        console.log("Something went wrong:  |  " + error);
+        throw "ERROR:   " + error;
+
     }
 })()
 
@@ -100,28 +113,6 @@ const downloadImages = () => {
     }
 }
 
-// merge all card images, save file, convert to base64 image, then initiate tweet
-const mergeAllImages = () => {
-    mergeImageFlag = 0;
-    mergeImg(['./img/magicCard0.jpg', './img/magicCard1.jpg', './img/magicCard2.jpg', './img/magicCard3.jpg', './img/magicCard4.jpg',
-        './img/magicCard5.jpg', './img/magicCard6.jpg'])
-        .then(img => {
-            if (img) {
-                // Save image as file
-                img.write('./img/compileHand.jpg', () => {
-                    console.log('merged');
-                    readImageAndKickTweet();
-                });
-            }
-        });
-}
+mergeAllImages();
+mergeImageFlag = 0;
 
-const readImageAndKickTweet = () => {
-    compileHandPath = path.join(__dirname, '/img/' + 'compileHand.jpg');
-    fs.readFile(compileHandPath, { encoding: 'base64', flag: 'r' }, (err, data) => {
-        if (err) return err;
-        console.log('Build complete!');
-        b64content = data;
-        postToTwitter();
-    });
-}
