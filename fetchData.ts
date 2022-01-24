@@ -1,129 +1,47 @@
-import {} from "";
-import {} from "";
-import {} from "";
-import {} from "";
-
-
-const request = require('request'),
-    cheerio = require('cheerio'),
-    iconv = require('iconv-lite'),
-    moment = require('moment');
-
-
-
-
+import request from "request";
+import cheerio from "cheerio";
+import moment from "moment";
+import { createDataUrl } from "./createMTGTop8Url";
 
 // async fetch for mtg events data for a particular format
-export async function get(page) {
-    createMTGTop8Url();
-    return "";
-
-
-    new Promise(function (resolve, reject) {
-        
-        request.post(MTG_TOP_8_URL, { form: { cp: page } }, function (error, response) {
-            if (error) return reject(error);
-            var result = [];
-            var $ = cheerio.load(iconv.decode(response.body, 'latin-1'));
-            var table = $('div div table tr td[width="40%"] > table').eq(1);
-            $('tr[height="30"]', table).each(function (i, div) {
-                var link = $('td a', div).attr('href');
-                var date = $('td[align="right"]', div).text();
-                result.push({
-                    title: $('td a', div).text(),
-                    id: parseInt(link.match(/e\=(\d*)/)[1]),
-                    stars: $('td[width="15%"] img[src="graph/star.png"]', div).length,
-                    bigstars: $('td[width="15%"] img[src="graph/bigstar.png"]', div).length,
-                    date: moment(date, 'DD/MM/YY').toDate()
-                });
+export async function fetchData(page?: any) {
+    const URL_OBJ: any = createDataUrl();
+    let tweetProperties: any = { deckName: '', deckLink: '', format: ''};
+    await request(URL_OBJ.MTG_GOLDFISH_URL, (error, response, html) => {
+        if (!error && response.statusCode == 200) {
+            const $ = cheerio.load(html);
+            let archetypeList: any;
+            let archetype: any;
+            $('.archetype-tile-container .deck-price-paper > a').each((i, element) => {
+                archetypeList = $(element).text();
             });
-            resolve(result);
-        });
+            // randomly choose archetype
+            archetype = randomlyChooseDeckArchetype(archetypeList);
+            // console.log(archetype);
+            let archetypeName: any = $('.deck-price-paper > a');
+            let archetypeLink: any = $('.deck-price-paper > a').attr('href');
+            tweetProperties.deckName = archetypeName.html(); // gets me the name of the deck
+            tweetProperties.deckLink = "https://www.mtggoldfish.com/" + archetypeLink; // gets me the archetype link
+            tweetProperties.format = URL_OBJ.FORMAT; // gets me the format name
+            getArchetypeDeckData(archetypeLink);
+        }
+    });
+    console.log(tweetProperties);
+    return tweetProperties;
+};
+
+function randomlyChooseDeckArchetype(lists: any) {
+    console.log(lists);
+    // console.log(lists.trim().split(/\r?\n/));
+    return lists[Math.floor(Math.random() * lists.length)];
+}
+
+function getArchetypeDeckData(link): any {
+    request("https://www.mtggoldfish.com/" + link, (error, response, html) => {
+        if (!error && response.statusCode == 200) {
+            const $ = cheerio.load(html);
+            const deckList = $('.deck-view-deck-table > tbody');
+            // console.log(deckList.text().trim().replace(/(\r\n|\n|\r|\s+)/gm, " "));
+        }
     });
 }
-
-function randomlyChooseMtgFormat(): string {
-    var formatList = ['ST', 'PI', 'MO', 'LE', 'VI'];
-    return formatList[Math.floor(Math.random() * formatList.length)];
-}
-
-function createMTGTop8Url(): string {
-    const MTG_TOP_8_URL = 'http://mtgtop8.com/format?f=' + randomlyChooseMtgFormat() + '&meta=52';
-    return MTG_TOP_8_URL;
-}
-
-function fetchSingleEventData(eventId) {
-    return new Promise(function (resolve, reject) {
-        request('http://mtgtop8.com/event?e=' + eventId, function (err, res) {
-            if (err) return reject(err);
-            var $ = cheerio.load(iconv.decode(res.body, 'latin-1'));
-            var players;
-            var date;
-            var data = $('table div table td[align=center] div')[1].prev.data.trim();
-            var playersRE = /^(\d*) players/;
-            var dateRE = /(\d\d\/\d\d\/\d\d)$/;
-            if (data.match(playersRE)) players = parseInt(data.match(playersRE)[1]);
-            if (data.match(dateRE)) date = data.match(dateRE)[1];
-            var result = {
-                title: $('.w_title td').first().text(),
-                format: $('table div table td[align=center] div')[0].prev.data.trim(),
-                stars: $('table div table td[align=center] div img[src="graph/star.png"]').length,
-                bigstars: $('table div table td[align=center] div img[src="graph/bigstar.png"]').length,
-                players: players,
-                date: moment(date, 'DD/MM/YY').toDate(),
-                decks: []
-            };
-            $('table td[width="25%"] > div > div:not([align="center"])').each(function (i, div) {
-                var link = $($('div div a', div)[0]).attr('href');
-                result.decks.push({
-                    result: $('div div[align=center]', div).text().trim(),
-                    title: $($('div div a', div)[0]).text().trim(),
-                    player: $($('div div a', div)[1]).text().trim(),
-                    id: parseInt(link.match(/\&d\=(\d*)/)[1])
-                });
-            });
-            result.players = result.players || result.decks.length;
-            resolve(result);
-        });
-    });
-}
-
-function fetchDeck(eventId, deckId) {
-    return new Promise(function (resolve, reject) {
-        request('http://mtgtop8.com/event?e=' + eventId + '&d=' + deckId, function (err, res) {
-            if (err) return reject(err);
-            var $ = cheerio.load(iconv.decode(res.body, 'latin-1'));
-            var result = {
-                player: $('table .chosen_tr [align=right] .topic').text().trim(),
-                result: $('table .chosen_tr [align=center]').text().trim(),
-                cards: [],
-                sideboard: []
-            };
-            var addCards = function (arr) {
-                return function (i, card) {
-                    var parent = $(card).parent();
-                    $(card).remove();
-
-                    var name = $(card).text().trim();
-                    var count = parseInt($(parent).text().trim());
-                    arr.push({
-                        count: count,
-                        name: name
-                    });
-                };
-            };
-            var tables = $('table table table');
-            $('tr td div span', tables.last()).each(addCards(result.sideboard));
-            tables.slice(0, -1).each(function (i, table) {
-                $('tr td div span', table).each(addCards(result.cards));
-            });
-            // An check to make sure that it's being noticed if a deck is empty. Not too sure that the method above is always working for older data.
-            if (!result.cards.length) console.log('[mtgtop8] It appears that this deck is empty, should be investigated. .event(' + eventId + ',' + deckId + ')');
-            resolve(result);
-        });
-    });
-}
-
-module.exports.retrieveMTGEventsData = retrieveMTGEventsData;
-module.exports.fetchSingleEventData = fetchSingleEventData;
-module.exports.fetchDeck = fetchDeck;
