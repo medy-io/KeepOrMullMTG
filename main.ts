@@ -25,10 +25,13 @@ let b64content: any,
     eventId: any,
     mergeImageFlag: number = 0;
 
+let tweetProperties: any = { deckName: '', deckLink: '', format: ''};
+
 // get mtg, get images, merge image and tweet: 'bootstrap async function for bot'
 (async () => {
     try {
-        eventData = await fetchData();
+        eventData = await fetchData(tweetProperties);
+        console.log(tweetProperties);
         // eventId = eventData[Math.floor(Math.random() * eventData.length)].id;
         // singleEventDataPoint = await fetchData.fetchSingleEventData(eventId);
         // deckObj = singleEventDataPoint.decks[Math.floor(Math.random() * singleEventDataPoint.decks.length)];
