@@ -1,47 +1,40 @@
 import request from "request";
 import cheerio from "cheerio";
-import moment from "moment";
 import { createDataUrl } from "./createMTGTop8Url";
+import { randomlyChooseDeckArchetype } from "./randomlyChooseDeckArchetype";
 
 // async fetch for mtg events data for a particular format
-export async function fetchData(page?: any) {
+export async function fetchData() {
     const URL_OBJ: any = createDataUrl();
-    let tweetProperties: any = { deckName: '', deckLink: '', format: ''};
-    await request(URL_OBJ.MTG_GOLDFISH_URL, (error, response, html) => {
+    return await request(URL_OBJ.MTG_GOLDFISH_URL, (error, response, html) => {
         if (!error && response.statusCode == 200) {
             const $ = cheerio.load(html);
-            let archetypeList: any;
+            let tweetProperties: any = { deckName: '', deckLink: '', format: '', deckList: ''};
+            let archetypeList: any[] = [];
+            let urlList: any[] = [];
             let archetype: any;
             $('.archetype-tile-container .deck-price-paper > a').each((i, element) => {
-                archetypeList = $(element).text();
+                archetypeList.push($(element).text());
+                urlList.push($(element).attr('href'));
             });
             // randomly choose archetype
             archetype = randomlyChooseDeckArchetype(archetypeList);
-            // console.log(archetype);
-            let archetypeName: any = $('.deck-price-paper > a');
-            let archetypeLink: any = $('.deck-price-paper > a').attr('href');
-            tweetProperties.deckName = archetypeName.html(); // gets me the name of the deck
-            tweetProperties.deckLink = "https://www.mtggoldfish.com/" + archetypeLink; // gets me the archetype link
+            let thingy: any = urlList.find(val => val.includes(archetype.split(' ')[0].toLowerCase()));
+            tweetProperties.deckName = archetype; // gets me the name of the deck
+            tweetProperties.deckLink = "https://www.mtggoldfish.com" + thingy; // gets me the archetype link
             tweetProperties.format = URL_OBJ.FORMAT; // gets me the format name
-            getArchetypeDeckData(archetypeLink);
+            tweetProperties.deckList = getArchetypeDeckData(tweetProperties.deckLink);
+            return tweetProperties;
         }
     });
-    console.log(tweetProperties);
-    return tweetProperties;
 };
 
-function randomlyChooseDeckArchetype(lists: any) {
-    console.log(lists);
-    // console.log(lists.trim().split(/\r?\n/));
-    return lists[Math.floor(Math.random() * lists.length)];
-}
-
-function getArchetypeDeckData(link): any {
-    request("https://www.mtggoldfish.com/" + link, (error, response, html) => {
+async function getArchetypeDeckData(link) {
+    return await request("https://www.mtggoldfish.com/" + link, (error, response, html) => {
         if (!error && response.statusCode == 200) {
             const $ = cheerio.load(html);
-            const deckList = $('.deck-view-deck-table > tbody');
-            // console.log(deckList.text().trim().replace(/(\r\n|\n|\r|\s+)/gm, " "));
+            let list: any = $('.deck-view-deck-table > tbody');
+            return list;
         }
     });
 }

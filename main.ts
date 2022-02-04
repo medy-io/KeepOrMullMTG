@@ -12,6 +12,11 @@ import { mergeAllImages } from "./mergeAllImages";
 import { readImageAndKickTweet } from "./readImageAndKickTweet";
 import { postToTwitter } from "./postToTwiter";
 
+interface TweetProperties {
+    deckName: string;
+    deckLink: string;
+    format: string;
+}
 
 // variables
 let b64content: any,
@@ -28,7 +33,7 @@ let b64content: any,
 // get mtg, get images, merge image and tweet: 'bootstrap async function for bot'
 (async () => {
     try {
-        eventData = await fetchData();
+        let va: any = await fetchData().then(val => console.log(val));
         // eventId = eventData[Math.floor(Math.random() * eventData.length)].id;
         // singleEventDataPoint = await fetchData.fetchSingleEventData(eventId);
         // deckObj = singleEventDataPoint.decks[Math.floor(Math.random() * singleEventDataPoint.decks.length)];
