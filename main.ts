@@ -30,6 +30,8 @@ let b64content: any,
     eventId: any,
     mergeImageFlag: number = 0;
 
+let tweetProperties: any = { deckName: '', deckLink: '', format: ''};
+
 // get mtg, get images, merge image and tweet: 'bootstrap async function for bot'
 (async () => {
     try {
