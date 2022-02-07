@@ -61,8 +61,8 @@ let b64content: any,
             tweetProperties.deckList = getArchetypeDeckData(tweetProperties.deckLink);
             tweetProperties.deckList = tweetProperties.deckList.then(resp => {
                 const $ = cheerio.load(resp.data);
-                let list: any = $('.deck-view-deck-table > tbody');
-                console.log("list   " + list);
+                let list: any = $('.deck-view-deck-table > tbody').text();
+                console.log("list   " + list.replace(/(\r\n|\n|\r)/gm, ""));
                 return list;
             });
             // return tweetProperties;
@@ -96,6 +96,7 @@ let b64content: any,
 
 
 async function getArchetypeDeckData(link) {
+    console.log(link);
     return axios.get(link);
 }
 
