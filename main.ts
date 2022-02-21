@@ -57,24 +57,17 @@ let b64content: any,
             let thingy: any = urlList.find(val => val.includes(archetype.split(' ')[0].toLowerCase()));
             tweetProperties.deckName = archetype; // gets me the name of the deck
             tweetProperties.deckLink = "https://www.mtggoldfish.com" + thingy; // gets me the archetype link
-            tweetProperties.format = URL_OBJ.FORMAT; // gets me the format name
+            tweetProperties.format = URL_OBJ.FORMAT.charAt(0).toUpperCase() + URL_OBJ.FORMAT.slice(1); // gets me the format name
             tweetProperties.deckList = getArchetypeDeckData(tweetProperties.deckLink);
             tweetProperties.deckList = tweetProperties.deckList.then(resp => {
                 const $ = cheerio.load(resp.data);
                 let list: any = $('.deck-view-deck-table > tbody').text();
-                console.log("list   " + list.replace(/(\r\n|\n|\r)/gm, ""));
+                console.log("list   " + list.replace(/\s{2,}/g, '\n').replace(/.{1}\s\d+.\d+/g, '').replace(/tix+/g, '').replace(/(\d Rare|\d Unc.|\d Comm.|\d Mythic)/g, ""));
                 return list;
             });
-            // return tweetProperties;
             return tweetProperties;
         });
-        console.log(ans);
-        /**
-            deckName: 'Jund',
-            deckLink: 'https://www.mtggoldfish.com/archetype/jund#paper',
-            format: 'modern',
-            deckList: ''
-         */
+        const tweetStr: string = 'Deck: ' + ans.deckName + '\n' + 'On the ' + CONSTANTS.PLAY_OR_DRAW + '\n' + 'Format: ' + ans.format + '\n' + 'Deck list: ' + ans.deckLink + '\n' + '#KeepOrMull' + '\n' + '#MTG' + ans.format + '\n' + '#MTG';
         // step 1 create random hand
         // createCardImageURL(ans.deckList);
         // step 2 fetch card images via scryfall
